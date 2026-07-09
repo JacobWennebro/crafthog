@@ -238,7 +238,7 @@ class PlayerModule(
 
             posthog.capture(
                 distinctId = id.toString(),
-                event = event("food_consumed"),
+                event = event("player_ate"),
                 properties = buildMap {
                     put("player_name", player.name)
                     put("food_type", material.name)

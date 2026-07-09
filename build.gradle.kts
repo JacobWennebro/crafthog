@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm") version "2.4.0"
     id("com.gradleup.shadow") version "9.5.1"
@@ -22,6 +24,10 @@ kotlin {
 tasks {
     build {
         dependsOn(shadowJar)
+    }
+
+    withType<ShadowJar> {
+        minimize()
     }
 
     runServer {

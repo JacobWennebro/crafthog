@@ -22,7 +22,7 @@ Capture player activity, world interactions, and command usage on your Minecraft
 
 | Module | Events | Description |
 |--------|--------|-------------|
-| **Players** | `player_joined`, `player_left`, `player_died`, `player_jumped`, `player_sneaked`, `food_consumed` | Lifecycle, movement, death, and food tracking |
+| **Players** | `player_joined`, `player_left`, `player_died`, `player_jumped`, `player_sneaked`, `player_ate` | Lifecycle, movement, death, and food tracking |
 | **World** | `block_placed`, `block_broken` | Block interaction analytics |
 | **Commands** | `ran_command` | Command usage tracking |
 
