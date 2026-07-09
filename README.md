@@ -28,6 +28,8 @@ Capture player activity, world interactions, and command usage on your Minecraft
 
 All events are prefixed with your configured `events_prefix` (default: `mc`).
 
+Missing a data point you want to track? [Open an issue](../../issues) and let me know.
+
 ---
 
 ## Installation
