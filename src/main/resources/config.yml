@@ -1,0 +1,69 @@
+# CraftHog by Jacob Wennebro (wennebro.com)
+
+# Prefix for all PostHog events (e.g. mc_player_joined)
+events_prefix: mc
+
+posthog:
+  # Your PostHog project API key
+  api-key: "your-api-key-here"
+  
+  # PostHog host URL (e.g. https://eu.i.posthog.com or https://app.posthog.com)
+  host: "https://eu.i.posthog.com"
+  
+  # Enable debug mode for verbose logging
+  debug: false
+
+modules:
+  # Capture player command usage statistics
+  commands:
+    enabled: false
+    # When false, only known/registered commands are reported.
+    # When true, everything the player types after '/' is reported.
+    report_invalid_commands: true
+
+  # Capture player lifecycle events and identify players in PostHog.
+  players:
+    enabled: false
+    # Send a PostHog identify() call when a player joins.
+    capture_identify: false
+    # Send a "player_joined" event when a player joins.
+    capture_join: false
+    # Send a "player_left" event when a player quits.
+    capture_leave: false
+    # Send a "player_died" event when a player dies.
+    capture_death: false
+    # Send a "player_jumped" event when a player jumps.
+    # Very noisy — defaults to false.
+    capture_jump: false
+    # Send a "player_sneaked" event when a player starts sneaking.
+    # Moderately noisy — defaults to false.
+    capture_sneak: false
+
+    # Food consumed tracking.
+    food_consumed:
+      enabled: false
+      # Food types to track. Case-insensitive.
+      # Empty list = ALL food items (moderately noisy).
+      types:
+        - GOLDEN_APPLE
+        - ENCHANTED_GOLDEN_APPLE
+
+  # Capture world interaction events (block place / break).
+  world:
+    enabled: false
+
+    # Block place tracking.
+    block_place:
+      enabled: false
+      # Block types to track. Case-insensitive.
+      # Empty list = ALL blocks (very noisy, not recommended).
+      types:
+        - BEDROCK
+
+    # Block break tracking.
+    block_break:
+      enabled: false
+      # Block types to track. Case-insensitive.
+      # Empty list = ALL blocks (very noisy, not recommended).
+      types:
+        - BEDROCK
