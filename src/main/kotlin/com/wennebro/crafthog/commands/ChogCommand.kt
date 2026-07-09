@@ -15,6 +15,11 @@ import org.bukkit.command.CommandSender
 class ChogCommand(private val plugin: Crafthog) : CommandExecutor {
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+        if (!sender.hasPermission("crafthog.admin")) {
+            sender.sendMessage("${ChatColor.RED}You don't have permission to use this command.")
+            return true
+        }
+
         if (args.isEmpty()) {
             showUsage(sender)
             return true
@@ -29,11 +34,6 @@ class ChogCommand(private val plugin: Crafthog) : CommandExecutor {
     }
 
     private fun handleReload(sender: CommandSender) {
-        if (!sender.hasPermission("crafthog.admin")) {
-            sender.sendMessage("${ChatColor.RED}You don't have permission to use this command.")
-            return
-        }
-
         sender.sendMessage("${ChatColor.YELLOW}Reloading Crafthog...")
         plugin.reloadPlugin()
         sender.sendMessage("${ChatColor.GREEN}Crafthog reloaded successfully.")

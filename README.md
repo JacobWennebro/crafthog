@@ -99,7 +99,7 @@ food_consumed:
 
 | Command | Permission | Description |
 |---------|------------|-------------|
-| `/chog` | none | Shows session stats and available commands |
+| `/chog` | `crafthog.admin` | Shows session stats and available commands |
 | `/chog reload` | `crafthog.admin` | Reloads configuration and re-registers all modules |
 
 The `crafthog.admin` permission defaults to **op**.
