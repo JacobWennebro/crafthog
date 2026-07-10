@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/logo.png" width="200" alt="CraftHog logo">
+</p>
+
 # CraftHog
 
 Event tracking and analytics for Minecraft servers, powered by [PostHog](https://posthog.com).
