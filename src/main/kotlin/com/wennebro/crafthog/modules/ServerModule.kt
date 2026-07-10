@@ -28,7 +28,7 @@ class ServerModule(
                     "server_version" to serverVersion,
                     "online_players" to Bukkit.getOnlinePlayers().size,
                     "max_players" to Bukkit.getMaxPlayers(),
-                    "$process_person_profile" to false
+                    $$"$process_person_profile" to false
                 )
             )
         }
@@ -44,7 +44,7 @@ class ServerModule(
                 properties = mapOf(
                     "plugin_version" to pluginVersion,
                     "online_players" to Bukkit.getOnlinePlayers().size,
-                    "$process_person_profile" to false
+                    $$"$process_person_profile" to false
                 )
             )
         }

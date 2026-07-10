@@ -43,6 +43,13 @@ settings:
   # When true, everything the player types after '/' is reported.
   report_invalid_commands: true
 
+  # Applies to: ran_command
+  # Command roots to track. Case-insensitive.
+  # Empty list = ALL commands (moderately noisy).
+  command_types:
+    - spawn
+    - home
+
   # Applies to: player_ate
   # Food types to track. Case-insensitive.
   # Empty list = ALL food items (moderately noisy).

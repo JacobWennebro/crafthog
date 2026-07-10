@@ -17,6 +17,7 @@ class ConfigManager(private val plugin: JavaPlugin) {
 
     data class Settings(
         val reportInvalidCommands: Boolean,
+        val commandTypes: List<String>,
         val foodConsumedTypes: List<String>,
         val blockPlaceTypes: List<String>,
         val blockBreakTypes: List<String>
@@ -55,6 +56,7 @@ class ConfigManager(private val plugin: JavaPlugin) {
 
         settings = Settings(
             reportInvalidCommands = config.getBoolean("settings.report_invalid_commands", true),
+            commandTypes = config.getStringList("settings.command_types"),
             foodConsumedTypes = config.getStringList("settings.food_consumed_types"),
             blockPlaceTypes = config.getStringList("settings.block_place_types"),
             blockBreakTypes = config.getStringList("settings.block_break_types")

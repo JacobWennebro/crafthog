@@ -85,6 +85,11 @@ settings:
   # Applies to: ran_command
   report_invalid_commands: true
 
+  # Applies to: ran_command
+  command_types:
+    - spawn
+    - home
+
   # Applies to: player_ate
   food_consumed_types:
     - GOLDEN_APPLE

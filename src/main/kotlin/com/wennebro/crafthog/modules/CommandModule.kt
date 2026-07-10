@@ -43,6 +43,10 @@ class CommandModule(
             return
         }
 
+        if (!shouldCapture(command, config.settings.commandTypes)) {
+            return
+        }
+
         val props = mapOf(
             "command" to command,
             "has_args" to args.isNotEmpty(),
@@ -78,5 +82,10 @@ class CommandModule(
             // Reflection failed (e.g. server impl changed) — be permissive
             true
         }
+    }
+
+    private fun shouldCapture(name: String, allowed: List<String>): Boolean {
+        if (allowed.isEmpty()) return true
+        return allowed.any { it.equals(name, ignoreCase = true) }
     }
 }
