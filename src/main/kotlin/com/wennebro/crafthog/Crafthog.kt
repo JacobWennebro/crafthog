@@ -26,35 +26,12 @@ class Crafthog : JavaPlugin() {
         configManager = ConfigManager(this)
         configManager.load()
 
-        if (configManager.posthog.apiKey.isBlank() || configManager.posthog.apiKey == "your-api-key-here") {
-            logger.warning("PostHog API key is not configured! Please set it in config.yml and reload.")
-            logger.warning("Plugin will start but no events will be captured.")
-        }
-
-        val phConfig = PostHogConfig(
-            configManager.posthog.apiKey,
-            configManager.posthog.host,
-            configManager.posthog.debug,
-        )
-        // Explicitly set flush options due to Kotlin version mismatch with posthog-server library
-        phConfig.flushAt = 20
-        phConfig.flushIntervalSeconds = 30
-        realPosthog = PostHog.with(phConfig)
-
-        posthog = Proxy.newProxyInstance(
-            PostHogInterface::class.java.classLoader,
-            arrayOf(PostHogInterface::class.java)
-        ) { _, method, args ->
-            if (method.name == "capture") {
-                captureCount.incrementAndGet()
-            }
-            method.invoke(realPosthog, *(args ?: emptyArray()))
-        } as PostHogInterface
-
+        initPostHog()
         registerModules()
         registerCommands()
 
         val prefix = configManager.eventsPrefix
+        val enabledEvents = configManager.getEnabledEvents()
 
         // Capture plugin startup event
         posthog.capture(
@@ -69,8 +46,12 @@ class Crafthog : JavaPlugin() {
             )
         )
 
+        if (enabledEvents.isEmpty()) {
+            logger.warning("No events are enabled. Uncomment events in config.yml to start capturing.")
+        }
+
         logger.info("Crafthog enabled. PostHog host: ${configManager.posthog.host}")
-        logger.info("Active modules: ${modules.joinToString { it.id }}")
+        logger.info("Enabled events: ${if (enabledEvents.isEmpty()) "none" else enabledEvents.joinToString()}")
     }
 
     override fun onDisable() {
@@ -110,37 +91,53 @@ class Crafthog : JavaPlugin() {
         logger.info("Crafthog disabled.")
     }
 
+    private fun initPostHog() {
+        if (configManager.posthog.apiKey.isBlank() || configManager.posthog.apiKey == "your-api-key-here") {
+            logger.warning("PostHog API key is not configured! Please set it in config.yml and reload.")
+            logger.warning("Plugin will start but no events will be captured.")
+        }
+
+        val phConfig = PostHogConfig(
+            configManager.posthog.apiKey,
+            configManager.posthog.host,
+            configManager.posthog.debug,
+        )
+        // Explicitly set flush options due to Kotlin version mismatch with posthog-server library
+        phConfig.flushAt = 20
+        phConfig.flushIntervalSeconds = 30
+        realPosthog = PostHog.with(phConfig)
+
+        posthog = Proxy.newProxyInstance(
+            PostHogInterface::class.java.classLoader,
+            arrayOf(PostHogInterface::class.java)
+        ) { _, method, args ->
+            if (method.name == "capture") {
+                captureCount.incrementAndGet()
+            }
+            method.invoke(realPosthog, *(args ?: emptyArray()))
+        } as PostHogInterface
+    }
+
     private fun registerModules() {
         val serverVersion = Bukkit.getBukkitVersion()
 
-        val eventsPrefix = configManager.eventsPrefix
-
         // Commands module
-        if (configManager.modules.commands) {
-            val commandSection = configManager.getModuleSection("commands")
-            val commandModule = CommandModule(posthog, serverVersion, commandSection, eventsPrefix)
-            commandModule.onEnable()
-            server.pluginManager.registerEvents(commandModule, this)
-            modules.add(commandModule)
-        }
+        val commandModule = CommandModule(posthog, serverVersion, configManager)
+        commandModule.onEnable()
+        server.pluginManager.registerEvents(commandModule, this)
+        modules.add(commandModule)
 
         // Players module
-        if (configManager.modules.players) {
-            val playerSection = configManager.getModuleSection("players")
-            val playerModule = PlayerModule(posthog, serverVersion, playerSection, this, eventsPrefix)
-            playerModule.onEnable()
-            server.pluginManager.registerEvents(playerModule, this)
-            modules.add(playerModule)
-        }
+        val playerModule = PlayerModule(posthog, serverVersion, configManager, this)
+        playerModule.onEnable()
+        server.pluginManager.registerEvents(playerModule, this)
+        modules.add(playerModule)
 
         // World module
-        if (configManager.modules.world) {
-            val worldSection = configManager.getModuleSection("world")
-            val worldModule = WorldModule(posthog, serverVersion, worldSection, eventsPrefix)
-            worldModule.onEnable()
-            server.pluginManager.registerEvents(worldModule, this)
-            modules.add(worldModule)
-        }
+        val worldModule = WorldModule(posthog, serverVersion, configManager)
+        worldModule.onEnable()
+        server.pluginManager.registerEvents(worldModule, this)
+        modules.add(worldModule)
     }
 
     private fun registerCommands() {
@@ -153,11 +150,19 @@ class Crafthog : JavaPlugin() {
         logger.info("Reloading Crafthog configuration...")
         configManager.reload()
 
-        // Re-register modules if module config changed
+        // Re-create PostHog client so api-key / host / debug changes take effect
+        initPostHog()
+
+        // Re-register modules so event toggles and settings take effect
         modules.forEach { it.onDisable() }
         modules.clear()
         registerModules()
 
-        logger.info("Crafthog reloaded.")
+        val enabledEvents = configManager.getEnabledEvents()
+        if (enabledEvents.isEmpty()) {
+            logger.warning("No events are enabled. Uncomment events in config.yml to start capturing.")
+        }
+
+        logger.info("Crafthog reloaded. Enabled events: ${if (enabledEvents.isEmpty()) "none" else enabledEvents.joinToString()}")
     }
 }

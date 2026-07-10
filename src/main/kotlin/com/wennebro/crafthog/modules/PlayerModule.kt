@@ -1,10 +1,10 @@
 package com.wennebro.crafthog.modules
 
 import com.posthog.server.PostHogInterface
+import com.wennebro.crafthog.config.ConfigManager
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -18,27 +18,17 @@ import java.util.UUID
 
 /**
  * Module that captures player lifecycle events (join, leave, death) and
- * identifies players in PostHog. All sub-features are individually toggleable.
+ * identifies players in PostHog. Events are individually toggleable via the
+ * flat events list in config.yml.
  */
 class PlayerModule(
     private val posthog: PostHogInterface,
     private val serverVersion: String,
-    moduleConfig: ConfigurationSection?,
-    private val plugin: JavaPlugin,
-    private val eventsPrefix: String
+    private val config: ConfigManager,
+    private val plugin: JavaPlugin
 ) : Module {
 
     override val id: String = "players"
-
-    private val captureJoin: Boolean = moduleConfig?.getBoolean("capture_join", true) ?: true
-    private val captureLeave: Boolean = moduleConfig?.getBoolean("capture_leave", true) ?: true
-    private val captureIdentify: Boolean = moduleConfig?.getBoolean("capture_identify", true) ?: true
-    private val captureDeath: Boolean = moduleConfig?.getBoolean("capture_death", true) ?: true
-    private val captureJump: Boolean = moduleConfig?.getBoolean("capture_jump", false) ?: false
-    private val captureSneak: Boolean = moduleConfig?.getBoolean("capture_sneak", false) ?: false
-
-    /** Food consumed tracking — enabled + type filter list */
-    private val foodConsumed = readTypedFilter(moduleConfig, "food_consumed")
 
     /**
      * Tracks the last vertical delta per player. Used to detect the *start*
@@ -63,20 +53,18 @@ class PlayerModule(
     }
 
     private fun event(name: String): String {
-        return "${eventsPrefix}_${name}"
+        return "${config.eventsPrefix}_${name}"
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        if (!captureJoin && !captureIdentify) return
-
         val player = event.player
         val id = player.uniqueId.toString()
         val ip = player.address?.address?.hostAddress
 
         lastDy[player.uniqueId] = 0.0
 
-        if (captureIdentify) {
+        if (config.identifyPlayers) {
             posthog.identify(
                 distinctId = id,
                 userProperties = buildMap {
@@ -89,7 +77,7 @@ class PlayerModule(
             )
         }
 
-        if (captureJoin) {
+        if (config.isEventEnabled("player_joined")) {
             posthog.capture(
                 distinctId = id,
                 event = event("player_joined"),
@@ -108,7 +96,7 @@ class PlayerModule(
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        if (captureLeave) {
+        if (config.isEventEnabled("player_left")) {
             val player = event.player
             val id = player.uniqueId.toString()
 
@@ -130,7 +118,7 @@ class PlayerModule(
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerDeath(event: PlayerDeathEvent) {
-        if (!captureDeath) return
+        if (!config.isEventEnabled("player_died")) return
 
         val player = event.player
         val id = player.uniqueId.toString()
@@ -160,7 +148,7 @@ class PlayerModule(
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerMove(event: PlayerMoveEvent) {
-        if (!captureJump) return
+        if (!config.isEventEnabled("player_jumped")) return
 
         val player = event.player
         if (player.isFlying || player.vehicle != null || player.isGliding) return
@@ -195,7 +183,7 @@ class PlayerModule(
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerToggleSneak(event: PlayerToggleSneakEvent) {
-        if (!captureSneak) return
+        if (!config.isEventEnabled("player_sneaked")) return
         if (!event.isSneaking) return
 
         val player = event.player
@@ -213,11 +201,11 @@ class PlayerModule(
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onItemConsume(event: PlayerItemConsumeEvent) {
-        if (!foodConsumed.enabled) return
+        if (!config.isEventEnabled("player_ate")) return
 
         val material = event.item.type
         if (!material.isEdible) return
-        if (!shouldCapture(material.name, foodConsumed.types)) return
+        if (!shouldCapture(material.name, config.settings.foodConsumedTypes)) return
 
         val player = event.player
         val id = player.uniqueId
@@ -263,17 +251,4 @@ class PlayerModule(
         if (allowed.isEmpty()) return true
         return allowed.any { it.equals(name, ignoreCase = true) }
     }
-
-    private fun readTypedFilter(parent: ConfigurationSection?, key: String): TypedFilter {
-        val section = parent?.getConfigurationSection(key)
-        return TypedFilter(
-            enabled = section?.getBoolean("enabled", false) ?: false,
-            types = section?.getStringList("types") ?: emptyList()
-        )
-    }
-
-    private data class TypedFilter(
-        val enabled: Boolean,
-        val types: List<String>
-    )
 }

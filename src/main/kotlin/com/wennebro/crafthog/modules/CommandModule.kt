@@ -1,8 +1,8 @@
 package com.wennebro.crafthog.modules
 
 import com.posthog.server.PostHogInterface
+import com.wennebro.crafthog.config.ConfigManager
 import org.bukkit.Bukkit
-import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerCommandPreprocessEvent
@@ -14,14 +14,10 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent
 class CommandModule(
     private val posthog: PostHogInterface,
     private val serverVersion: String,
-    moduleConfig: ConfigurationSection?,
-    private val eventsPrefix: String
+    private val config: ConfigManager
 ) : Module {
 
     override val id: String = "commands"
-
-    /** When false, commands not known to the server are silently skipped. */
-    private val reportInvalid: Boolean = moduleConfig?.getBoolean("report_invalid_commands", true) ?: true
 
     override fun onEnable() {
         // Listener registration happens in the plugin class
@@ -32,16 +28,18 @@ class CommandModule(
     }
 
     private fun event(name: String): String {
-        return "${eventsPrefix}_${name}"
+        return "${config.eventsPrefix}_${name}"
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerCommand(event: PlayerCommandPreprocessEvent) {
+        if (!config.isEventEnabled("ran_command")) return
+
         val player = event.player
         val command = event.message.split(" ").firstOrNull()?.removePrefix("/") ?: "unknown"
         val args = event.message.split(" ").drop(1)
 
-        if (!reportInvalid && !isKnownCommand(command)) {
+        if (!config.settings.reportInvalidCommands && !isKnownCommand(command)) {
             return
         }
 

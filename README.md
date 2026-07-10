@@ -8,23 +8,29 @@ Capture player activity, world interactions, and command usage on your Minecraft
 
 ## What it does
 
-- **Modular event capture** - enable only what you need
+- **Per-event capture** - enable only the events you need by uncommenting them
 - **Custom event prefixes** - namespace your events (like `mc_player_joined`, `mc_block_placed`)
 - **Typed filtering** - track only specific blocks, foods, or commands
 - **Player identification** - identify players in PostHog with custom properties
 - **Personless events** - plugin events do not create PostHog person profiles
 - **Live session counter** - see how many events have been captured this session
-- **Zero-downtime reload** - reload config and modules without restarting
+- **Zero-downtime reload** - reload config and events without restarting
 
 ---
 
-## Modules
+## Events
 
-| Module | Events | Description |
-|--------|--------|-------------|
-| **Players** | `player_joined`, `player_left`, `player_died`, `player_jumped`, `player_sneaked`, `player_ate` | Lifecycle, movement, death, and food tracking |
-| **World** | `block_placed`, `block_broken` | Block interaction analytics |
-| **Commands** | `ran_command` | Command usage tracking |
+| Event | Category | Description |
+|-------|----------|-------------|
+| `player_joined` | Player | Fired when a player joins the server |
+| `player_left` | Player | Fired when a player leaves the server |
+| `player_died` | Player | Fired when a player dies |
+| `player_jumped` | Player | Fired when a player jumps (very noisy) |
+| `player_sneaked` | Player | Fired when a player starts sneaking (moderately noisy) |
+| `player_ate` | Player | Fired when a player eats food (moderately noisy) |
+| `ran_command` | Command | Fired when a player runs a command |
+| `block_placed` | World | Fired when a player places a block (very noisy) |
+| `block_broken` | World | Fired when a player breaks a block (very noisy) |
 
 All events are prefixed with your configured `events_prefix` (default: `mc`).
 
@@ -38,7 +44,8 @@ Missing a data point you want to track? [Open an issue](../../issues) and let me
 2. Drop it into your server's `plugins/` folder
 3. Restart your server
 4. Edit `plugins/Crafthog/config.yml` with your PostHog API key
-5. Run `/chog reload` or restart
+5. Uncomment the events you want to capture
+6. Run `/chog reload` or restart
 
 ---
 
@@ -53,32 +60,37 @@ posthog:
   host: "https://eu.i.posthog.com"
   debug: false
 
-modules:
-  commands:
-    enabled: true
-    report_invalid_commands: true
+# Identify players in PostHog when they join (recommended).
+identify_players: true
 
-  players:
-    enabled: true
-    capture_identify: true
-    capture_join: true
-    capture_leave: true
-    capture_death: true
-    capture_jump: false      # Very noisy
-    capture_sneak: false     # Moderately noisy
-    food_consumed:
-      enabled: true
-      types: []              # Empty = all food items
+events:
+  # Uncomment the events you want to capture.
+  # - player_joined
+  # - player_left
+  # - player_died
+  # - player_jumped    # Very noisy
+  # - player_sneaked     # Moderately noisy
+  # - player_ate         # Moderately noisy without type filtering
+  # - ran_command
+  # - block_placed       # Very noisy without type filtering
+  # - block_broken       # Very noisy without type filtering
 
-  world:
-    enabled: true
-    block_place:
-      enabled: true
-      types:
-        - BEDROCK
-    block_break:
-      enabled: true
-      types: []              # Empty = all blocks
+settings:
+  # Applies to: ran_command
+  report_invalid_commands: true
+
+  # Applies to: player_ate
+  food_consumed_types:
+    - GOLDEN_APPLE
+    - ENCHANTED_GOLDEN_APPLE
+
+  # Applies to: block_placed
+  block_place_types:
+    - BEDROCK
+
+  # Applies to: block_broken
+  block_break_types:
+    - BEDROCK
 ```
 
 ### Typed Filters
@@ -86,9 +98,8 @@ modules:
 Use the `types` list under any tracked item to whitelist specific values. Case-insensitive.
 
 ```yaml
-food_consumed:
-  enabled: true
-  types:
+settings:
+  food_consumed_types:
     - GOLDEN_APPLE
     - ENCHANTED_GOLDEN_APPLE
 ```

@@ -1,11 +1,11 @@
 package com.wennebro.crafthog.config
 
-import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.plugin.java.JavaPlugin
 
 /**
  * Handles loading and providing access to plugin configuration.
+ * Events are now controlled by a flat list in config.yml.
  */
 class ConfigManager(private val plugin: JavaPlugin) {
 
@@ -15,20 +15,26 @@ class ConfigManager(private val plugin: JavaPlugin) {
         val debug: Boolean
     )
 
-    data class ModuleConfig(
-        val commands: Boolean,
-        val players: Boolean,
-        val world: Boolean
+    data class Settings(
+        val reportInvalidCommands: Boolean,
+        val foodConsumedTypes: List<String>,
+        val blockPlaceTypes: List<String>,
+        val blockBreakTypes: List<String>
     )
 
     lateinit var posthog: PostHogConfig
         private set
 
-    lateinit var modules: ModuleConfig
+    lateinit var settings: Settings
         private set
 
     lateinit var eventsPrefix: String
         private set
+
+    var identifyPlayers: Boolean = true
+        private set
+
+    private val enabledEvents = mutableSetOf<String>()
 
     fun load() {
         plugin.saveDefaultConfig()
@@ -41,37 +47,28 @@ class ConfigManager(private val plugin: JavaPlugin) {
         )
 
         eventsPrefix = config.getString("events_prefix", "mc")!!
+        identifyPlayers = config.getBoolean("identify_players", true)
 
-        modules = ModuleConfig(
-            commands = isModuleEnabled(config, "commands"),
-            players = isModuleEnabled(config, "players"),
-            world = isModuleEnabled(config, "world")
+        enabledEvents.clear()
+        val eventList = config.getStringList("events")
+        enabledEvents.addAll(eventList.map { it.lowercase() })
+
+        settings = Settings(
+            reportInvalidCommands = config.getBoolean("settings.report_invalid_commands", true),
+            foodConsumedTypes = config.getStringList("settings.food_consumed_types"),
+            blockPlaceTypes = config.getStringList("settings.block_place_types"),
+            blockBreakTypes = config.getStringList("settings.block_break_types")
         )
     }
 
     /**
-     * Returns the configuration section for a specific module.
-     * Modules read their own toggles/fields from this section.
+     * Check if a specific event is enabled in the config.
      */
-    fun getModuleSection(id: String): ConfigurationSection? {
-        return plugin.config.getConfigurationSection("modules.$id")
+    fun isEventEnabled(name: String): Boolean {
+        return enabledEvents.contains(name.lowercase())
     }
 
-    /**
-     * Reads the master on/off toggle for a module.
-     * Supports both the legacy flat boolean format (`commands: true`)
-     * and the newer section format (`commands.enabled: true`).
-     */
-    private fun isModuleEnabled(config: FileConfiguration, id: String): Boolean {
-        val path = "modules.$id"
-        return when {
-            config.isBoolean(path) -> config.getBoolean(path, true)
-            config.isConfigurationSection(path) -> {
-                config.getConfigurationSection(path)?.getBoolean("enabled", true) ?: true
-            }
-            else -> true
-        }
-    }
+    fun getEnabledEvents(): Set<String> = enabledEvents.toSet()
 
     fun reload() {
         plugin.reloadConfig()

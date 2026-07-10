@@ -1,7 +1,7 @@
 package com.wennebro.crafthog.modules
 
 import com.posthog.server.PostHogInterface
-import org.bukkit.configuration.ConfigurationSection
+import com.wennebro.crafthog.config.ConfigManager
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.BlockBreakEvent
@@ -13,17 +13,10 @@ import org.bukkit.event.block.BlockPlaceEvent
 class WorldModule(
     private val posthog: PostHogInterface,
     private val serverVersion: String,
-    moduleConfig: ConfigurationSection?,
-    private val eventsPrefix: String
+    private val config: ConfigManager
 ) : Module {
 
     override val id: String = "world"
-
-    /** Block place tracking — enabled + type filter list */
-    private val blockPlace = readTypedFilter(moduleConfig, "block_place")
-
-    /** Block break tracking — enabled + type filter list */
-    private val blockBreak = readTypedFilter(moduleConfig, "block_break")
 
     override fun onEnable() {
         // Listener registration happens in the plugin class
@@ -34,15 +27,15 @@ class WorldModule(
     }
 
     private fun event(name: String): String {
-        return "${eventsPrefix}_${name}"
+        return "${config.eventsPrefix}_${name}"
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onBlockPlace(event: BlockPlaceEvent) {
-        if (!blockPlace.enabled) return
+        if (!config.isEventEnabled("block_placed")) return
 
         val material = event.block.type
-        if (!shouldCapture(material.name, blockPlace.types)) return
+        if (!shouldCapture(material.name, config.settings.blockPlaceTypes)) return
 
         val player = event.player
 
@@ -63,10 +56,10 @@ class WorldModule(
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onBlockBreak(event: BlockBreakEvent) {
-        if (!blockBreak.enabled) return
+        if (!config.isEventEnabled("block_broken")) return
 
         val material = event.block.type
-        if (!shouldCapture(material.name, blockBreak.types)) return
+        if (!shouldCapture(material.name, config.settings.blockBreakTypes)) return
 
         val player = event.player
 
@@ -89,17 +82,4 @@ class WorldModule(
         if (allowed.isEmpty()) return true
         return allowed.any { it.equals(name, ignoreCase = true) }
     }
-
-    private fun readTypedFilter(parent: ConfigurationSection?, key: String): TypedFilter {
-        val section = parent?.getConfigurationSection(key)
-        return TypedFilter(
-            enabled = section?.getBoolean("enabled", false) ?: false,
-            types = section?.getStringList("types") ?: emptyList()
-        )
-    }
-
-    private data class TypedFilter(
-        val enabled: Boolean,
-        val types: List<String>
-    )
 }

@@ -13,57 +13,46 @@ posthog:
   # Enable debug mode for verbose logging
   debug: false
 
-modules:
-  # Capture player command usage statistics
-  commands:
-    enabled: false
-    # When false, only known/registered commands are reported.
-    # When true, everything the player types after '/' is reported.
-    report_invalid_commands: true
+# Identify players in PostHog when they join (recommended).
+identify_players: true
 
-  # Capture player lifecycle events and identify players in PostHog.
-  players:
-    enabled: false
-    # Send a PostHog identify() call when a player joins.
-    capture_identify: false
-    # Send a "player_joined" event when a player joins.
-    capture_join: false
-    # Send a "player_left" event when a player quits.
-    capture_leave: false
-    # Send a "player_died" event when a player dies.
-    capture_death: false
-    # Send a "player_jumped" event when a player jumps.
-    # Very noisy — defaults to false.
-    capture_jump: false
-    # Send a "player_sneaked" event when a player starts sneaking.
-    # Moderately noisy — defaults to false.
-    capture_sneak: false
+events:
+  # --- Player Events ---
+  # - player_joined # Fired when a player joins the server.
+  # - player_left # Fired when a player leaves the server.
+  # - player_died # Fired when a player dies.
+  # - player_jumped # Fired when a player jumps. Very noisy — use with caution.
+  # - player_sneaked # Fired when a player starts sneaking. Moderately noisy.
+  # - player_ate # Fired when a player eats food. Moderately noisy without type filtering.
 
-    # Food consumed tracking.
-    food_consumed:
-      enabled: false
-      # Food types to track. Case-insensitive.
-      # Empty list = ALL food items (moderately noisy).
-      types:
-        - GOLDEN_APPLE
-        - ENCHANTED_GOLDEN_APPLE
+  # --- Command Events ---
+  # - ran_command # Fired when a player runs a command.
 
-  # Capture world interaction events (block place / break).
-  world:
-    enabled: false
+  # --- World Events ---
+  # - block_placed # Fired when a player places a block. Very noisy without type filtering.
+  # - block_broken # Fired when a player breaks a block. Very noisy without type filtering.
 
-    # Block place tracking.
-    block_place:
-      enabled: false
-      # Block types to track. Case-insensitive.
-      # Empty list = ALL blocks (very noisy, not recommended).
-      types:
-        - BEDROCK
+settings:
+  # Applies to: ran_command
+  # When false, only known/registered commands are reported.
+  # When true, everything the player types after '/' is reported.
+  report_invalid_commands: true
 
-    # Block break tracking.
-    block_break:
-      enabled: false
-      # Block types to track. Case-insensitive.
-      # Empty list = ALL blocks (very noisy, not recommended).
-      types:
-        - BEDROCK
+  # Applies to: player_ate
+  # Food types to track. Case-insensitive.
+  # Empty list = ALL food items (moderately noisy).
+  food_consumed_types:
+    - GOLDEN_APPLE
+    - ENCHANTED_GOLDEN_APPLE
+
+  # Applies to: block_placed
+  # Block types to track. Case-insensitive.
+  # Empty list = ALL blocks (very noisy, not recommended).
+  block_place_types:
+    - BEDROCK
+
+  # Applies to: block_broken
+  # Block types to track. Case-insensitive.
+  # Empty list = ALL blocks (very noisy, not recommended).
+  block_break_types:
+    - BEDROCK
