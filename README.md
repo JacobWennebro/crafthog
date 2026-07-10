@@ -148,7 +148,7 @@ The fat JAR will be at `build/libs/crafthog-<version>-all.jar`.
 ./gradlew runServer
 ```
 
-Spins up a Paper 1.26.2 server with the plugin automatically loaded.
+Spins up a Paper 26.2 server with the plugin automatically loaded.
 
 ---
 
