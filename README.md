@@ -161,6 +161,12 @@ Spins up a Paper 1.26.2 server with the plugin automatically loaded.
 
 ---
 
+## Disclaimer
+
+CraftHog is an independent open-source project and is **not affiliated with, endorsed by, or sponsored by PostHog**.
+
+---
+
 ## License
 
 MIT
