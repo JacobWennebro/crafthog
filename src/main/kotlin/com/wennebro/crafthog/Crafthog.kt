@@ -8,6 +8,7 @@ import com.wennebro.crafthog.config.ConfigManager
 import com.wennebro.crafthog.modules.CommandModule
 import com.wennebro.crafthog.modules.Module
 import com.wennebro.crafthog.modules.PlayerModule
+import com.wennebro.crafthog.modules.ServerModule
 import com.wennebro.crafthog.modules.WorldModule
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
@@ -30,22 +31,7 @@ class Crafthog : JavaPlugin() {
         registerModules()
         registerCommands()
 
-        val prefix = configManager.eventsPrefix
         val enabledEvents = configManager.getEnabledEvents()
-
-        // Capture plugin startup event
-        posthog.capture(
-            distinctId = "server",
-            event = "${prefix}_plugin_enabled",
-            properties = mapOf(
-                "plugin_version" to description.version,
-                "server_version" to Bukkit.getBukkitVersion(),
-                "online_players" to Bukkit.getOnlinePlayers().size,
-                "max_players" to Bukkit.getMaxPlayers(),
-                $$"$process_person_profile" to false
-            )
-        )
-
         if (enabledEvents.isEmpty()) {
             logger.warning("No events are enabled. Uncomment events in config.yml to start capturing.")
         }
@@ -55,20 +41,11 @@ class Crafthog : JavaPlugin() {
     }
 
     override fun onDisable() {
-        // Capture plugin shutdown event
+        // Let modules capture shutdown events (e.g. plugin_disabled) before flushing.
+        modules.forEach { it.onDisable() }
+        modules.clear()
+
         if (::posthog.isInitialized) {
-            val prefix = configManager.eventsPrefix
-
-            posthog.capture(
-                distinctId = "server",
-                event = "${prefix}_plugin_disabled",
-                properties = mapOf(
-                    "plugin_version" to description.version,
-                    "online_players" to Bukkit.getOnlinePlayers().size,
-                    $$"$process_person_profile" to false
-                )
-            )
-
             // Flush synchronously but with a timeout so the Paper watchdog doesn't kill us
             // if PostHog is unreachable. 15s is well under the default 60s watchdog threshold.
             val flushThread = Thread {
@@ -86,8 +63,6 @@ class Crafthog : JavaPlugin() {
             }
         }
 
-        modules.forEach { it.onDisable() }
-        modules.clear()
         logger.info("Crafthog disabled.")
     }
 
@@ -120,6 +95,11 @@ class Crafthog : JavaPlugin() {
 
     private fun registerModules() {
         val serverVersion = Bukkit.getBukkitVersion()
+
+        // Server module (startup / shutdown events)
+        val serverModule = ServerModule(posthog, serverVersion, configManager, description.version)
+        serverModule.onEnable()
+        modules.add(serverModule)
 
         // Commands module
         val commandModule = CommandModule(posthog, serverVersion, configManager)

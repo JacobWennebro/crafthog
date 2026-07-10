@@ -22,9 +22,12 @@ Capture player activity, world interactions, and command usage on your Minecraft
 
 | Event | Category | Description |
 |-------|----------|-------------|
+| `plugin_enabled` | Server | Fired when the plugin starts up |
+| `plugin_disabled` | Server | Fired when the plugin shuts down |
 | `player_joined` | Player | Fired when a player joins the server |
 | `player_left` | Player | Fired when a player leaves the server |
 | `player_died` | Player | Fired when a player dies |
+| `player_kill` | Player | Fired when a player kills another player |
 | `player_jumped` | Player | Fired when a player jumps (very noisy) |
 | `player_sneaked` | Player | Fired when a player starts sneaking (moderately noisy) |
 | `player_ate` | Player | Fired when a player eats food (moderately noisy) |
@@ -65,9 +68,12 @@ identify_players: true
 
 events:
   # Uncomment the events you want to capture.
+  # - plugin_enabled
+  # - plugin_disabled
   # - player_joined
   # - player_left
   # - player_died
+  # - player_kill
   # - player_jumped    # Very noisy
   # - player_sneaked     # Moderately noisy
   # - player_ate         # Moderately noisy without type filtering

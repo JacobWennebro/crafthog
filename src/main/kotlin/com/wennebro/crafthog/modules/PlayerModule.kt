@@ -123,6 +123,7 @@ class PlayerModule(
         val player = event.player
         val id = player.uniqueId.toString()
         val killer = event.player.killer
+        val deathCause = player.lastDamageCause?.cause?.name ?: "unknown"
 
         posthog.capture(
             distinctId = id,
@@ -132,6 +133,7 @@ class PlayerModule(
                 put("world", player.world.name)
                 put("server_version", serverVersion)
                 put("death_message", event.deathMessage() ?: "unknown")
+                put("death_cause", deathCause)
                 if (killer != null) {
                     put("killer_name", killer.name)
                     put("killer_uuid", killer.uniqueId.toString())
@@ -144,6 +146,26 @@ class PlayerModule(
                 put("keep_level", event.keepLevel)
             }
         )
+
+        if (killer != null && config.isEventEnabled("player_kill")) {
+            val weapon = killer.inventory.itemInMainHand.type.name.let {
+                if (it == "AIR") "unknown" else it
+            }
+
+            posthog.capture(
+                distinctId = killer.uniqueId.toString(),
+                event = event("player_kill"),
+                properties = buildMap {
+                    put("killer_name", killer.name)
+                    put("victim_name", player.name)
+                    put("victim_uuid", player.uniqueId.toString())
+                    put("world", player.world.name)
+                    put("server_version", serverVersion)
+                    put("death_cause", deathCause)
+                    put("weapon", weapon)
+                }
+            )
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

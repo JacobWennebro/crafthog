@@ -17,10 +17,15 @@ posthog:
 identify_players: true
 
 events:
+  # --- Server Events ---
+  # - plugin_enabled # Fired when the plugin starts up.
+  # - plugin_disabled # Fired when the plugin shuts down.
+
   # --- Player Events ---
   # - player_joined # Fired when a player joins the server.
   # - player_left # Fired when a player leaves the server.
   # - player_died # Fired when a player dies.
+  # - player_kill # Fired when a player kills another player.
   # - player_jumped # Fired when a player jumps. Very noisy — use with caution.
   # - player_sneaked # Fired when a player starts sneaking. Moderately noisy.
   # - player_ate # Fired when a player eats food. Moderately noisy without type filtering.
